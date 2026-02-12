@@ -16,3 +16,14 @@ class CrmLead(models.Model):
         # multi company rule
         res = super()._read_group_stage_ids(stages, domain, order)
         return stages.search([("id", "in", res.ids)])
+
+    @api.depends("team_id", "type", "company_id")
+    def _compute_stage_id(self):
+        for lead in self:
+            if not lead.stage_id:
+                lead.stage_id = lead._stage_find(
+                    domain=[
+                        ("fold", "=", False),
+                        ("company_id", "in", [False, lead.company_id.id]),
+                    ]
+                ).id
